@@ -86,32 +86,24 @@
   (let [head (first (:body snake))]
     (some #{[71 61]} fruit)))
 
-(defn valid-direction? [snake new-dir]
+(defn valid-direction? [snake new-dir] ;; TODO refactor 'delta' as 'dir-vector' (i.e. direction vector)
   "True if new-dir is not opposite to current-dir, else nil"
   (let [current-dir (:direction snake)
         [current-delta new-delta] (map direction-to-delta [current-dir new-dir])
-        sum-deltas (vec-operate + current-delta new-delta)]
+        sum-deltas (vec-operate + current-delta new-delta)] ;;
     (some #(not= 0 %) sum-deltas))) ;;
 
-;; (validate-direction :down :right)
+;; (valid-direction? snake :right)
 
-(defn move-snake [fruit snake]
+(defn change-position [fruit snake]
   (let* [new-body (prepend-new-head snake)
          new-snake (assoc snake :body new-body)]
     (if (eat-fruit? new-snake fruit)
       new-snake
       (assoc new-snake :body (butlast new-body)))))
 
-;; (move-snake (move-snake snake :left fruit) :left fruit)
+;; (change-position (move-snake snake :left fruit) :left fruit)
 
-
-
-;; (hit-a-wall? snake {:width 40 :height 30}) => true
-
-(defn get-direction ;; TODO
-  "Get keyevent and return direction"
-  [key-event]
-  :up)
 
 (defn change-direction
   "Check if direction is valid and return snake with new direction"
@@ -119,6 +111,13 @@
   (if (valid-direction? snake direction)
     (assoc snake :direction direction)
     snake))
+
+(defn move-snake
+  "Get key event move the snake, check move outcome and proceed accordingly"
+  [board fruit new-direction snake]
+  (->> (change-direction snake new-direction) ;; check if direction is valid and assoc snake with direction
+       (change-position fruit))) ;; move snake according to direction and whether fruit has been eaten or not
+       ;; (finalize-move board enough-fruit)))
 
 
 (defn hit-a-wall?
@@ -130,6 +129,7 @@
         (< x 0)
         (< y 0))))
 
+;; (hit-a-wall? snake {:width 40 :height 30}) => true
 
 (defn hit-self? [snake]
   (let [body-no-head (rest (:body snake))
@@ -142,12 +142,6 @@
       (hit-self? snake)))
 
 
-(defn game-over-new-game
-  "Do some stuff when game over and then start a new game"
-  []
-  (print "Game over haha!"))
-
-
 (defn belly-full?
   "True if snake has eaten enough fruit to move to next stage, else false"
  [snake enough-fruit]
@@ -155,7 +149,6 @@
    (= snake-len enough-fruit)))
 
 ;; (belly-full? snake 10) => false
-
 
 (defn next-stage
   "Change some of the game parameters and start the next stage"
@@ -170,7 +163,14 @@
   (print "You loose this time!")
   (create-snake board 3))
 
-(defn finalize-move ;; maybe `after-move` is a better name?
+
+(defn get-direction ;; TODO
+  "Get keyevent and return direction"
+  [key-event]
+  :up)
+
+
+(defn move-outcome ;; maybe `after-move` is a better name?
   "Check the outcome of snake move, and act accordingly"
   [board enough-fruit snake]
   (let [game-over (game-over? snake board)
@@ -181,15 +181,8 @@
       :else snake)))
 
 
-(defn game-move
-  "Get key event move the snake, check move outcome and proceed accordingly"
-  [board snake stage enough-fruit fruit]
-  (->> (get-direction nil) ;; get direction from key event
-       (change-direction snake) ;; check if direction is valid and assoc snake with direction
-       (move-snake fruit) ;; move snake according to direction and whether fruit has been eaten or not
-       (finalize-move board enough-fruit)))
-
-(game-move board snake 1 10 fruit)
+(defn game [] nil)
+;; (game-move board snake 1 10 fruit)
 ;; before: {:body [[50 50] [49 50] [48 50]], :direction :right}
 ;; after:  {:body ([50 49] [50 50] [49 50]), :direction :up}
 
